@@ -12,6 +12,7 @@ Powered by [`@shopify/react-native-skia`](https://shopify.github.io/react-native
 - **Colors & Gradients** — solid colors or Skia shader fills (linear, radial, sweep)
 - **Shapes** — rect, roundedRect, circle, or arbitrary SVG path
 - **Multi-layer** — stack multiple shadow layers, just like in Figma
+- **Animated** — 60fps animations via Reanimated SharedValues (optional)
 - **Cross-platform** — iOS & Android
 
 ## Installation
@@ -21,6 +22,8 @@ npm install react-native-skia-box-shadow @shopify/react-native-skia
 ```
 
 > **Peer dependency**: `@shopify/react-native-skia` >= 1.0.0
+>
+> For animated shadows: `react-native-reanimated` >= 3.0.0 (optional)
 
 ## Usage
 
@@ -41,6 +44,49 @@ import { Shadow } from 'react-native-skia-box-shadow';
     <Text>Card with shadow</Text>
   </View>
 </Shadow>
+```
+
+### Animated shadow
+
+```tsx
+import { AnimatedShadow } from 'react-native-skia-box-shadow';
+import { useSharedValue, withSpring } from 'react-native-reanimated';
+
+const MyCard = () => {
+  const blur = useSharedValue(16);
+  const offsetY = useSharedValue(4);
+  const spread = useSharedValue(0);
+
+  const onPressIn = () => {
+    blur.value = withSpring(32);
+    offsetY.value = withSpring(12);
+    spread.value = withSpring(4);
+  };
+
+  const onPressOut = () => {
+    blur.value = withSpring(16);
+    offsetY.value = withSpring(4);
+    spread.value = withSpring(0);
+  };
+
+  return (
+    <AnimatedShadow
+      shadows={{
+        fillStyle: { kind: 'color', color: 'rgba(0,0,0,0.15)' },
+        blurRadius: blur,
+        offsetY,
+        spread,
+      }}
+      shape={{ kind: 'roundedRect', radius: 16 }}
+    >
+      <Pressable onPressIn={onPressIn} onPressOut={onPressOut}>
+        <View style={styles.card}>
+          <Text>Press me</Text>
+        </View>
+      </Pressable>
+    </AnimatedShadow>
+  );
+};
 ```
 
 ### Multiple shadow layers
@@ -141,6 +187,16 @@ import { Skia } from '@shopify/react-native-skia';
 The component renders a Skia `<Canvas>` behind your children. Each shadow layer draws a shape (matching your content's shape) with a Gaussian blur applied as an ImageFilter. The canvas is automatically expanded to prevent clipping.
 
 This is a React Native port of the Compose Multiplatform library [`vasyl-stetsiuk/shadow`](https://github.com/vasyl-stetsiuk/shadow).
+
+## `<AnimatedShadow>`
+
+Same API as `<Shadow>`, but numeric props (`blurRadius`, `spread`, `offsetX`, `offsetY`) accept Reanimated `SharedValue<number>` for 60fps UI-thread animations.
+
+| Additional Prop      | Type     | Default | Description                                    |
+| -------------------- | -------- | ------- | ---------------------------------------------- |
+| `maxCanvasPadding`   | `number` | `120`   | Max extent for animated values (prevents clip) |
+
+Since animated values change at runtime, the canvas padding can't be auto-calculated. Set `maxCanvasPadding` to the largest extent your shadow can reach (blur × 3 + spread + offset).
 
 ## License
 

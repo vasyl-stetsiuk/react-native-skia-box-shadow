@@ -30,7 +30,9 @@
     "spread",
     "ios",
     "android",
-    "react-native-skia"
+    "react-native-skia",
+    "animated",
+    "reanimated"
   ],
   "repository": {
     "type": "git",
@@ -48,20 +50,25 @@
   "peerDependencies": {
     "@shopify/react-native-skia": ">=1.0.0",
     "react": ">=18.0.0",
-    "react-native": ">=0.71.0"
+    "react-native": ">=0.71.0",
+    "react-native-reanimated": ">=3.0.0"
   },
   "peerDependenciesMeta": {
     "@shopify/react-native-skia": {
       "optional": false
+    },
+    "react-native-reanimated": {
+      "optional": true
     }
   },
   "devDependencies": {
     "@shopify/react-native-skia": "^1.11.0",
     "@types/react": "^18.2.0",
-    "@types/react-native": "^0.72.0",
+    "@types/react-native": "^0.75.0",
     "react": "^18.2.0",
     "react-native": "^0.75.0",
     "react-native-builder-bob": "^0.30.0",
+    "react-native-reanimated": "^3.16.0",
     "typescript": "^5.4.0"
   },
   "react-native-builder-bob": {
