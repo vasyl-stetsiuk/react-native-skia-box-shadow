@@ -36,7 +36,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nickstetsiuk/react-native-skia-box-shadow.git"
+    "url": "git+https://github.com/vasyl-stetsiuk/react-native-skia-box-shadow.git"
   },
   "author": {
     "name": "Vasyl Stetsiuk",
@@ -44,9 +44,9 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/nickstetsiuk/react-native-skia-box-shadow/issues"
+    "url": "https://github.com/vasyl-stetsiuk/react-native-skia-box-shadow/issues"
   },
-  "homepage": "https://github.com/nickstetsiuk/react-native-skia-box-shadow#readme",
+  "homepage": "https://github.com/vasyl-stetsiuk/react-native-skia-box-shadow#readme",
   "peerDependencies": {
     "@shopify/react-native-skia": ">=1.0.0",
     "react": ">=18.0.0",
