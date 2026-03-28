@@ -139,7 +139,7 @@ const ShadowLayer: React.FC<{
  *
  * @example
  * ```tsx
- * import { Shadow } from 'react-native-skia-shadow';
+ * import { Shadow } from 'react-native-skia-box-shadow';
  *
  * <Shadow
  *   shadows={{

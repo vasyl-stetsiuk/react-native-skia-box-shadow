@@ -1,5 +1,5 @@
 {
-  "name": "react-native-skia-shadow",
+  "name": "react-native-skia_box-shadow",
   "version": "0.1.0",
   "description": "CSS-style box shadows for React Native — blur, spread, offset, colors, gradients, and arbitrary shapes. Powered by @shopify/react-native-skia.",
   "main": "lib/commonjs/index.js",
@@ -34,7 +34,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nickstetsiuk/react-native-skia-shadow.git"
+    "url": "git+https://github.com/nickstetsiuk/react-native-skia-box-shadow.git"
   },
   "author": {
     "name": "Vasyl Stetsiuk",
@@ -42,9 +42,9 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/nickstetsiuk/react-native-skia-shadow/issues"
+    "url": "https://github.com/nickstetsiuk/react-native-skia-box-shadow/issues"
   },
-  "homepage": "https://github.com/nickstetsiuk/react-native-skia-shadow#readme",
+  "homepage": "https://github.com/nickstetsiuk/react-native-skia-box-shadow#readme",
   "peerDependencies": {
     "@shopify/react-native-skia": ">=1.0.0",
     "react": ">=18.0.0",
