@@ -1,5 +1,5 @@
 {
-  "name": "react-native-skia_box-shadow",
+  "name": "react-native-skia-box-shadow",
   "version": "0.1.0",
   "description": "CSS-style box shadows for React Native — blur, spread, offset, colors, gradients, and arbitrary shapes. Powered by @shopify/react-native-skia.",
   "main": "lib/commonjs/index.js",
