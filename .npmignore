@@ -1,0 +1,11 @@
+tsconfig.json
+tsconfig.build.json
+.github
+example
+__tests__
+__fixtures__
+__mocks__
+*.test.ts
+*.test.tsx
+.eslintrc*
+.prettierrc*

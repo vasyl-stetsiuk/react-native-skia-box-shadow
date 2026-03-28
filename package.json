@@ -1,0 +1,79 @@
+{
+  "name": "react-native-skia-shadow",
+  "version": "0.1.0",
+  "description": "CSS-style box shadows for React Native — blur, spread, offset, colors, gradients, and arbitrary shapes. Powered by @shopify/react-native-skia.",
+  "main": "lib/commonjs/index.js",
+  "module": "lib/module/index.js",
+  "types": "lib/typescript/index.d.ts",
+  "source": "src/index.ts",
+  "files": [
+    "src",
+    "lib",
+    "!**/__tests__",
+    "!**/__fixtures__",
+    "!**/__mocks__"
+  ],
+  "scripts": {
+    "build": "bob build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "clean": "rm -rf lib",
+    "prepare": "bob build"
+  },
+  "keywords": [
+    "react-native",
+    "skia",
+    "shadow",
+    "box-shadow",
+    "drop-shadow",
+    "blur",
+    "spread",
+    "ios",
+    "android",
+    "react-native-skia"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nickstetsiuk/react-native-skia-shadow.git"
+  },
+  "author": {
+    "name": "Vasyl Stetsiuk",
+    "url": "https://stetsiuk.dev"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nickstetsiuk/react-native-skia-shadow/issues"
+  },
+  "homepage": "https://github.com/nickstetsiuk/react-native-skia-shadow#readme",
+  "peerDependencies": {
+    "@shopify/react-native-skia": ">=1.0.0",
+    "react": ">=18.0.0",
+    "react-native": ">=0.71.0"
+  },
+  "peerDependenciesMeta": {
+    "@shopify/react-native-skia": {
+      "optional": false
+    }
+  },
+  "devDependencies": {
+    "@shopify/react-native-skia": "^1.11.0",
+    "react": "^18.2.0",
+    "react-native": "^0.75.0",
+    "react-native-builder-bob": "^0.30.0",
+    "typescript": "^5.4.0"
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "commonjs",
+      "module",
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
+  }
+}
