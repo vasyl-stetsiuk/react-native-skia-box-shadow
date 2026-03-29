@@ -17,13 +17,15 @@ import {
 } from '@shopify/react-native-skia';
 
 import type {
+  Animatable,
   ShadowProps,
   ShadowParams,
   ShadowShape,
   ShadowFillStyle,
 } from './types';
+import {useDerivedValue} from "react-native-reanimated";
 
-// ── Defaults (mirrors ShadowDefaults.kt) ───────────────────────
+// ── Defaults (mirrors ShadowDefaults.kt) ────────────────────────
 const DEFAULTS = {
   fillStyle: { kind: 'color', color: 'rgba(0,0,0,0.10)' } as ShadowFillStyle,
   blurRadius: 24,
@@ -34,7 +36,34 @@ const DEFAULTS = {
 
 const pixelRatio = PixelRatio.get();
 
-// ── Single shadow layer renderer ────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────
+
+const readNum = (v: Animatable<number> | undefined, fallback: number): number => {
+  'worklet';
+  if (v === undefined || v === null) return fallback;
+  if (typeof v === 'number') return v;
+  return v.value;
+};
+
+const readStr = (v: Animatable<string> | undefined, fallback: string): string => {
+  'worklet';
+  if (v === undefined || v === null) return fallback;
+  if (typeof v === 'string') return v;
+  return v.value;
+};
+
+const isAnimated = (v: any): boolean =>
+    v !== undefined && v !== null && typeof v === 'object' && 'value' in v;
+
+const hasAnimatedValues = (params: ShadowParams): boolean =>
+    isAnimated(params.blurRadius) ||
+    isAnimated(params.spread) ||
+    isAnimated(params.offsetX) ||
+    isAnimated(params.offsetY) ||
+    (params.fillStyle?.kind === 'color' && isAnimated(params.fillStyle.color)) ||
+    (params.shape?.kind === 'roundedRect' && isAnimated(params.shape.radius));
+
+// ── Shadow layer ────────────────────────────────────────────────
 const ShadowLayer: React.FC<{
   params: ShadowParams;
   width: number;
@@ -52,131 +81,170 @@ const ShadowLayer: React.FC<{
 
   const shape = shapeOverride ?? defaultShape;
 
-  // ── Paint ─────────────────────────────────────────────────────
-  const paint = useMemo(() => {
+  // ── Color: static Paint or animated ───────────────────────────
+  const isColorAnimated =
+      fillStyle.kind === 'color' && isAnimated(fillStyle.color);
+
+  const staticPaint = useMemo(() => {
+    if (isColorAnimated) return null;
     const p = Skia.Paint();
     if (fillStyle.kind === 'color') {
-      p.setColor(Skia.Color(fillStyle.color));
+      p.setColor(Skia.Color(fillStyle.color as string));
     } else {
       p.setShader(fillStyle.factory(width, height));
     }
     return p;
-  }, [fillStyle, width, height]);
+  }, [fillStyle, width, height, isColorAnimated]);
 
-  // ── Shadow sizing (spread) ────────────────────────────────────
-  const shadowWidth = width + spread * 2;
-  const shadowHeight = height + spread * 2;
-  const scaleX = width > 0 ? shadowWidth / width : 1;
-  const scaleY = height > 0 ? shadowHeight / height : 1;
+  const animatedColor = useDerivedValue(() => {
+    if (fillStyle.kind === 'color') {
+      return Skia.Color(readStr(fillStyle.color, 'rgba(0,0,0,0.10)'));
+    }
+    return Skia.Color('transparent');
+  }, [fillStyle]);
 
-  // ── Blur (adjusted for pixel density) ─────────────────────────
-  const adjustedBlur = blurRadius / pixelRatio;
-  const blurChild = adjustedBlur > 0 ? <Blur blur={adjustedBlur} /> : null;
+  // ── Animated blur ─────────────────────────────────────────────
+  const derivedBlur = useDerivedValue(() => {
+    return readNum(blurRadius, DEFAULTS.blurRadius) / pixelRatio;
+  }, [blurRadius]);
 
-  // ── Shape element (with Blur as child) ────────────────────────
+  // ── Animated offset ───────────────────────────────────────────
+  const offsetTransform = useDerivedValue(() => {
+    return [
+      { translateX: readNum(offsetX, DEFAULTS.offsetX) },
+      { translateY: readNum(offsetY, DEFAULTS.offsetY) },
+    ];
+  }, [offsetX, offsetY]);
+
+  // ── Animated spread (scale) ───────────────────────────────────
+  const scaleTransform = useDerivedValue(() => {
+    const s = readNum(spread, DEFAULTS.spread);
+    const sw = width + s * 2;
+    const sh = height + s * 2;
+    return [
+      { scaleX: width > 0 ? sw / width : 1 },
+      { scaleY: height > 0 ? sh / height : 1 },
+    ];
+  }, [spread, width, height]);
+
+  // ── Animated border radius ────────────────────────────────────
+  const derivedRadius = useDerivedValue(() => {
+    if (shape.kind === 'roundedRect') {
+      return readNum(shape.radius, 0);
+    }
+    return 0;
+  }, [shape]);
+
+  // ── Shape element ─────────────────────────────────────────────
   const shapeElement = useMemo(() => {
+    const blurChild = <Blur blur={derivedBlur} />;
+    const colorProps = isColorAnimated
+        ? { color: animatedColor }
+        : { paint: staticPaint! };
+
     switch (shape.kind) {
       case 'roundedRect':
         return (
-          <RoundedRect
-            x={0}
-            y={0}
-            width={width}
-            height={height}
-            r={shape.radius}
-            paint={paint}
-          >
-            {blurChild}
-          </RoundedRect>
+            <RoundedRect
+                x={0} y={0} width={width} height={height}
+                r={derivedRadius} {...colorProps}
+            >
+              {blurChild}
+            </RoundedRect>
         );
-
       case 'circle': {
         const r = Math.min(width, height) / 2;
         return (
-          <Circle cx={width / 2} cy={height / 2} r={r} paint={paint}>
-            {blurChild}
-          </Circle>
+            <Circle cx={width / 2} cy={height / 2} r={r} {...colorProps}>
+              {blurChild}
+            </Circle>
         );
       }
-
       case 'path':
         return (
-          <Path path={shape.svgPath} paint={paint}>
-            {blurChild}
-          </Path>
+            <Path path={shape.svgPath} {...colorProps}>
+              {blurChild}
+            </Path>
         );
-
       case 'rect':
       default:
         return (
-          <Rect x={0} y={0} width={width} height={height} paint={paint}>
-            {blurChild}
-          </Rect>
+            <Rect x={0} y={0} width={width} height={height} {...colorProps}>
+              {blurChild}
+            </Rect>
         );
     }
-  }, [shape, width, height, paint, blurChild]);
+  }, [shape, width, height, staticPaint, animatedColor, derivedBlur, derivedRadius, isColorAnimated]);
 
   return (
-    <Group transform={[{ translateX: offsetX }, { translateY: offsetY }]}>
-      <Group
-        transform={[{ scaleX }, { scaleY }]}
-        origin={{ x: width / 2, y: height / 2 }}
-      >
-        {shapeElement}
+      <Group transform={offsetTransform}>
+        <Group
+            transform={scaleTransform}
+            origin={{ x: width / 2, y: height / 2 }}
+        >
+          {shapeElement}
+        </Group>
       </Group>
-    </Group>
   );
 };
+
+// ── Main Shadow component ───────────────────────────────────────
 
 /**
  * `<Shadow>` — CSS-style box shadows for React Native.
  *
- * Renders one or more blurred, colored shadows behind `children`.
- * Supports blur, spread, offset, custom colors/shaders, and
- * arbitrary shapes (rect, roundedRect, circle, SVG path).
+ * Supports animated values via Reanimated `SharedValue`,
+ * color animation, gradient fills, multi-layer shadows,
+ * and arbitrary shapes.
  *
- * Powered by `@shopify/react-native-skia`.
+ * All numeric props (`blurRadius`, `spread`, `offsetX`, `offsetY`)
+ * and color strings accept both static values and `SharedValue`
+ * for 60fps UI-thread animations.
  *
- * @example
+ * @example Static shadow
  * ```tsx
- * import { Shadow } from 'react-native-skia-box-shadow';
- *
  * <Shadow
- *   shadows={{
- *     fillStyle: { kind: 'color', color: 'rgba(0,0,0,0.15)' },
- *     blurRadius: 20,
- *     offsetY: 4,
- *   }}
+ *   shadows={{ blurRadius: 16, offsetY: 4,
+ *     fillStyle: { kind: 'color', color: 'rgba(0,0,0,0.15)' } }}
  *   shape={{ kind: 'roundedRect', radius: 16 }}
  * >
- *   <View style={styles.card}>
- *     <Text>Card with shadow</Text>
- *   </View>
+ *   <View style={styles.card}><Text>Hello</Text></View>
  * </Shadow>
  * ```
  *
- * @example
+ * @example Animated shadow with color transition
  * ```tsx
- * // Multiple shadow layers
+ * const blur = useSharedValue(16);
+ * const shadowColor = useSharedValue('rgba(0,0,0,0.15)');
+ *
+ * const onPressIn = () => {
+ *   blur.value = withSpring(32);
+ *   shadowColor.value = withTiming('rgba(59,130,246,0.4)');
+ * };
+ *
  * <Shadow
- *   shadows={[
- *     { blurRadius: 4, offsetY: 2, fillStyle: { kind: 'color', color: 'rgba(0,0,0,0.08)' } },
- *     { blurRadius: 16, offsetY: 8, fillStyle: { kind: 'color', color: 'rgba(0,0,0,0.12)' } },
- *   ]}
- *   shape={{ kind: 'roundedRect', radius: 12 }}
+ *   shadows={{
+ *     blurRadius: blur,
+ *     fillStyle: { kind: 'color', color: shadowColor },
+ *   }}
+ *   shape={{ kind: 'roundedRect', radius: 16 }}
+ *   maxCanvasPadding={150}
  * >
- *   {children}
+ *   <Pressable onPressIn={onPressIn}>
+ *     <View style={styles.card}><Text>Press me</Text></View>
+ *   </Pressable>
  * </Shadow>
  * ```
  */
 const Shadow: React.FC<ShadowProps> = ({
-  shadows,
-  shape = { kind: 'rect' },
-  width: _width,
-  height: _height,
-  style,
-  children,
-}) => {
+                                         shadows,
+                                         shape = { kind: 'rect' },
+                                         width: _width,
+                                         height: _height,
+                                         maxCanvasPadding,
+                                         style,
+                                         children,
+                                       }) => {
   const [layout, setLayout] = useState<{
     width: number;
     height: number;
@@ -192,59 +260,65 @@ const Shadow: React.FC<ShadowProps> = ({
 
   const shadowList = Array.isArray(shadows) ? shadows : [shadows];
 
-  // ── Compute canvas padding ────────────────────────────────────
-  // The canvas must be large enough to contain blurred + spread +
-  // offset shadows without clipping.
+  // ── Canvas padding ────────────────────────────────────────────
   const canvasPadding = useMemo(() => {
+    const parentShapeAnimated =
+        shape.kind === 'roundedRect' && isAnimated(shape.radius);
+    const anyAnimated =
+        parentShapeAnimated || shadowList.some(hasAnimatedValues);
+    if (anyAnimated) {
+      return maxCanvasPadding ?? 120;
+    }
+
     let maxExtent = 0;
     for (const s of shadowList) {
-      const blur = s.blurRadius ?? DEFAULTS.blurRadius;
-      const spread = s.spread ?? DEFAULTS.spread;
-      const ox = Math.abs(s.offsetX ?? DEFAULTS.offsetX);
-      const oy = Math.abs(s.offsetY ?? DEFAULTS.offsetY);
-      const extent = blur * 3 + spread + Math.max(ox, oy);
+      const blur = (s.blurRadius as number) ?? DEFAULTS.blurRadius;
+      const sp = (s.spread as number) ?? DEFAULTS.spread;
+      const ox = Math.abs((s.offsetX as number) ?? DEFAULTS.offsetX);
+      const oy = Math.abs((s.offsetY as number) ?? DEFAULTS.offsetY);
+      const extent = blur * 3 + sp + Math.max(ox, oy);
       if (extent > maxExtent) maxExtent = extent;
     }
     return Math.ceil(maxExtent);
-  }, [shadowList]);
+  }, [shadowList, shape, maxCanvasPadding]);
 
   const hasSize = width > 0 && height > 0;
 
   return (
-    <View style={[styles.container, style]} onLayout={onLayout}>
-      {hasSize && (
-        <Canvas
-          style={[
-            styles.canvas,
-            {
-              top: -canvasPadding,
-              left: -canvasPadding,
-              width: width + canvasPadding * 2,
-              height: height + canvasPadding * 2,
-            },
-          ]}
-        >
-          <Group
-            transform={[
-              { translateX: canvasPadding },
-              { translateY: canvasPadding },
-            ]}
-          >
-            {shadowList.map((params, idx) => (
-              <ShadowLayer
-                key={idx}
-                params={params}
-                width={width}
-                height={height}
-                defaultShape={shape}
-              />
-            ))}
-          </Group>
-        </Canvas>
-      )}
+      <View style={[styles.container, style]} onLayout={onLayout}>
+        {hasSize && (
+            <Canvas
+                style={[
+                  styles.canvas,
+                  {
+                    top: -canvasPadding,
+                    left: -canvasPadding,
+                    width: width + canvasPadding * 2,
+                    height: height + canvasPadding * 2,
+                  },
+                ]}
+            >
+              <Group
+                  transform={[
+                    { translateX: canvasPadding },
+                    { translateY: canvasPadding },
+                  ]}
+              >
+                {shadowList.map((params, idx) => (
+                    <ShadowLayer
+                        key={idx}
+                        params={params}
+                        width={width}
+                        height={height}
+                        defaultShape={shape}
+                    />
+                ))}
+              </Group>
+            </Canvas>
+        )}
 
-      {children}
-    </View>
+        {children}
+      </View>
   );
 };
 

@@ -1,48 +1,38 @@
 import type { ReactNode } from 'react';
-import type { ViewStyle, StyleProp } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 
 /**
- * Fill style for shadow — solid color or a Skia shader factory.
+ * A value that can be either static or a Reanimated SharedValue.
+ * When static, no reanimated dependency is needed.
+ */
+export type Animatable<T> = T | { value: T };
+
+/**
+ * Fill style for a shadow layer.
  *
- * @example
- * // Solid color
- * { kind: 'color', color: 'rgba(0,0,0,0.12)' }
- *
- * // Linear gradient
- * {
- *   kind: 'shader',
- *   factory: (w, h) => Skia.Shader.MakeLinearGradient(
- *     { x: 0, y: 0 }, { x: w, y: h },
- *     [Skia.Color('#6366F1'), Skia.Color('#EC4899')],
- *     null, 0,
- *   ),
- * }
+ * - `color`: solid color fill. The color string itself can be
+ *   a `SharedValue<string>` for animated color transitions.
+ * - `shader`: custom Skia shader factory (gradients, etc.)
  */
 export type ShadowFillStyle =
-  | { kind: 'color'; color: string }
-  | {
-      kind: 'shader';
-      factory: (
-        width: number,
-        height: number,
-      ) => import('@shopify/react-native-skia').SkShader;
-    };
+    | { kind: 'color'; color: Animatable<string> }
+    | { kind: 'shader'; factory: (width: number, height: number) => any };
 
 /**
- * Single shadow layer descriptor.
- * All numeric values are in device-independent points.
+ * Parameters for a single shadow layer.
+ * All numeric values accept `number | SharedValue<number>`.
  */
 export interface ShadowParams {
-  /** Fill style: solid color string or shader factory. Default: black @ 10% */
+  /** Fill style: solid color or shader factory. Default: black @ 10% */
   fillStyle?: ShadowFillStyle;
   /** Gaussian blur radius (in points, Figma-compatible). Default: 24 */
-  blurRadius?: number;
+  blurRadius?: Animatable<number>;
   /** Expands the shadow outline beyond element bounds. Default: 4 */
-  spread?: number;
+  spread?: Animatable<number>;
   /** Horizontal offset. Default: 0 */
-  offsetX?: number;
+  offsetX?: Animatable<number>;
   /** Vertical offset. Default: 0 */
-  offsetY?: number;
+  offsetY?: Animatable<number>;
   /**
    * Shape override for this specific shadow layer.
    * When undefined, inherits `shape` from the parent `<Shadow>`.
@@ -54,10 +44,10 @@ export interface ShadowParams {
  * Supported shadow shapes.
  */
 export type ShadowShape =
-  | { kind: 'rect' }
-  | { kind: 'roundedRect'; radius: number }
-  | { kind: 'circle' }
-  | { kind: 'path'; svgPath: string };
+    | { kind: 'rect' }
+    | { kind: 'roundedRect'; radius: Animatable<number> }
+    | { kind: 'circle' }
+    | { kind: 'path'; svgPath: string };
 
 /**
  * Props for the `<Shadow>` component.
@@ -71,6 +61,14 @@ export interface ShadowProps {
   width?: number;
   /** Explicit component height. If omitted, measured via onLayout. */
   height?: number;
+  /**
+   * Maximum canvas padding for animated shadows.
+   * When using SharedValue props, the final extent is unknown at render time.
+   * Set this large enough to contain the shadow at its maximum animated state.
+   * Ignored when all props are static (padding is auto-calculated).
+   * Default: undefined (auto-calculate from static values)
+   */
+  maxCanvasPadding?: number;
   /** RN style for the outer container. */
   style?: StyleProp<ViewStyle>;
   /** Content rendered above the shadow. */
