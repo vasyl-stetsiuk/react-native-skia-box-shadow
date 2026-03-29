@@ -49,7 +49,7 @@ import { Shadow } from 'react-native-skia-box-shadow';
 ### Animated shadow
 
 ```tsx
-import { AnimatedShadow } from 'react-native-skia-box-shadow';
+import { Shadow } from 'react-native-skia-box-shadow';
 import { useSharedValue, withSpring } from 'react-native-reanimated';
 
 const MyCard = () => {
@@ -70,7 +70,7 @@ const MyCard = () => {
   };
 
   return (
-    <AnimatedShadow
+    <Shadow
       shadows={{
         fillStyle: { kind: 'color', color: 'rgba(0,0,0,0.15)' },
         blurRadius: blur,
@@ -84,7 +84,7 @@ const MyCard = () => {
           <Text>Press me</Text>
         </View>
       </Pressable>
-    </AnimatedShadow>
+    </Shadow>
   );
 };
 ```
@@ -187,16 +187,6 @@ import { Skia } from '@shopify/react-native-skia';
 The component renders a Skia `<Canvas>` behind your children. Each shadow layer draws a shape (matching your content's shape) with a Gaussian blur applied as an ImageFilter. The canvas is automatically expanded to prevent clipping.
 
 This is a React Native port of the Compose Multiplatform library [`vasyl-stetsiuk/shadow`](https://github.com/vasyl-stetsiuk/shadow).
-
-## `<AnimatedShadow>`
-
-Same API as `<Shadow>`, but numeric props (`blurRadius`, `spread`, `offsetX`, `offsetY`) accept Reanimated `SharedValue<number>` for 60fps UI-thread animations.
-
-| Additional Prop      | Type     | Default | Description                                    |
-| -------------------- | -------- | ------- | ---------------------------------------------- |
-| `maxCanvasPadding`   | `number` | `120`   | Max extent for animated values (prevents clip) |
-
-Since animated values change at runtime, the canvas padding can't be auto-calculated. Set `maxCanvasPadding` to the largest extent your shadow can reach (blur × 3 + spread + offset).
 
 ## License
 
