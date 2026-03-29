@@ -277,4 +277,4 @@ animated values are read on the UI thread via `useDerivedValue` — zero React r
 
 ## License
 
-MIT © [Vasyl Stetsiuk](https://stetsiuk.dev)
+MIT © [Vasyl Stetsiuk](https://github.com/vasyl-stetsiuk)
