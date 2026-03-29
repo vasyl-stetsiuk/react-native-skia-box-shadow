@@ -4,6 +4,9 @@ CSS-style box shadows for React Native — blur, spread, offset, colors, gradien
 
 Powered by [`@shopify/react-native-skia`](https://shopify.github.io/react-native-skia/).
 
+## 👀 Preview
+![Shadow Preview](media/preview.gif)
+
 ## Features
 
 - **Blur** — Gaussian blur with no sigma limit (uses Skia ImageFilter)
