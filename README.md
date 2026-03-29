@@ -8,6 +8,9 @@ Powered by [`@shopify/react-native-skia`](https://shopify.github.io/react-native
 This is a React Native port of the Compose Multiplatform library [
 `vasyl-stetsiuk/shadow`](https://github.com/vasyl-stetsiuk/shadow).
 
+## Preview
+![Shadow Preview](media/preview.gif)
+
 ## Features
 
 - **Blur** — Gaussian blur with no sigma limit (Skia ImageFilter)
